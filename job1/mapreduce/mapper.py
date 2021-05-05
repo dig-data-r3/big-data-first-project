@@ -17,15 +17,3 @@ for row in sys.stdin:
 
     # write the separated fields to standard output
     print('%s\t%s\t%s\t%s\t%s' % (ticker, closePrice, minPrice, maxPrice, date))
-
-# job1:
-# per ciascuna azione:
-# 	- data prima quotazione
-# 	- data ultima quotazione
-# 	- variazione percentuale della quotazione (tra primo e ultimo prezzo di
-#   	chiusura nel dataset)
-# 	- prezzo massimo e minimo
-# 	- (facoltativo) max numero giorni consecutivi in cui azione è cresciuta
-#  	    (chiusura > apertura) con l'anno in cui è avvenuto
-# ordinare il report per valori decrescenti del secondo punto
-# (dalla data di quotazione più recente alla più vecchia)
