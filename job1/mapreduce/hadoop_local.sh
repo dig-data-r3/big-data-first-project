@@ -1,7 +1,8 @@
 hdfs dfs -rm -r output/job1_mapreduce/
-
+cd "$(dirname "$0")" || exit
 mapred streaming \
-  -mapper /home/alex/git/big-data-first-project/job1/mapreduce/mapper.py \
-  -reducer /home/alex/git/big-data-first-project/job1/mapreduce/reducer.py \
-  -input input/historical_stock_prices.csv \
+  -files mapper.py,reducer.py \
+  -mapper mapper.py \
+  -reducer reducer.py \
+  -input input/historical_stock_prices_tiny.csv \
   -output output/job1_mapreduce
