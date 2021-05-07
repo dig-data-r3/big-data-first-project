@@ -1,3 +1,5 @@
+#!/bin/bash
+
 hdfs dfs -rm -r output/job1_mapreduce/
 cd "$(dirname "$0")" || exit
 mapred streaming \
