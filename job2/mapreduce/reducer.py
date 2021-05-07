@@ -25,17 +25,6 @@ tickerDataBySectorYear = {}
 #       }
 aggregatedSectorYearData = {}
 
-# map each (sector, year) to the required values to calculate
-# for example:
-#   results = {('FINANCE', 2010): {
-#       'year_quot_perc_var': 13.6,
-#       'max_perc_incr_ticker': 'AMZN',
-#       'max_perc_incr_value': 25.3,
-#       'max_vol_incr_ticker': 'AAPL',
-#       'max_vol_incr_value': 2000}, ...}
-# this is not needed, to provide results iterate over previous structure and compute the perc var
-# results = {}
-
 
 def calculatePercVar(initialValue, finalValue):
     return (finalValue - initialValue) / initialValue * 100
@@ -105,22 +94,40 @@ for (ticker, sector, year) in tickerDataBySectorYear:
             currData['max_total_volume_value'] = volume
 
 
-# # sort the results from the most recent to old quotation dates
-# sortedResults = sorted(results.items(),
-#                        # result is in the format ('TickerName', {'min': 1, 'max': 2}), a tuple
-#                        key=lambda single_result: single_result[1]['last_quot_date'],
-#                        reverse=True)
-#
-# # result is in the format ('TickerName', {'min': 1, 'max': 2}), a tuple
-# for result in sortedResults:
-#     tickerName = result[0]
-#     tickerResults = result[1]
-#     tickerResults['perc_var'] = (tickerResults['last_quot_price'] - tickerResults['first_quot_price']) / \
-#         tickerResults['first_quot_price'] * 100
-#     print('{:<10s}\t{}\t{}\t{:>25}%\t{:<20}\t{:<20}'.format(
-#         tickerName,
-#         tickerResults['first_quot_date'],
-#         tickerResults['last_quot_date'],
-#         tickerResults['perc_var'],
-#         tickerResults['min_price'],
-#         tickerResults['max_price']))
+# sort the results based on sector
+# aggregatedSectorYearData entries are in the format: ('Sector', Year): {'min': 1, 'max': 2, ...}
+sortedResults = sorted(aggregatedSectorYearData.items(),
+                       # takes the first argument in (key, value), and the first argument in key=(sector, year)
+                       # it will return a list of ordered keys (by their partial value, sector)
+                       key=lambda single_entry: single_entry[0][0],
+                       # orders the sectors by ascending alphabetical order
+                       reverse=False)
+
+# each result has the format of aggregatedSectorYearData entries, plus a new field for the total percent variation
+for result in sortedResults:
+    sector = result[0][0]
+    year = result[0][1]
+
+    currResult = aggregatedSectorYearData[(sector, year)]
+    initialCloseSum = currResult['sum_initial_close']
+    finalCloseSum = currResult['sum_final_close']
+    currResult['total_perc_var'] = calculatePercVar(initialCloseSum, finalCloseSum)
+
+    print('{:<10s}\t{}\t{:>25}%\t{:<10s}\t{:>25}%\t:<10s}\t{}'.format(
+        sector,
+        year,
+        currResult['total_perc_var'],
+        currResult['max_perc_var_ticker'],
+        currResult['max_perc_var_value'],
+        currResult['max_total_volume_ticker'],
+        currResult['max_total_volume_value']))
+
+# structure to save the aggregated values from the previous one
+#   aggregatedSectorYearData[('TECH', 2012)] = {
+#       'sum_initial_close': 4000,
+#       'sum_final_close': 6000,
+#       'max_perc_var_ticker': 'AAPL',
+#       'max_perc_var_value': 75,
+#       'max_total_volume_ticker': 'AAPL',
+#       'max_total_volume_value': 3000000
+#       }
