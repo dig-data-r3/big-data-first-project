@@ -49,9 +49,9 @@ for line in sys.stdin:
     # save (in memory) the info of each ticker per year and sector (inefficient)
     if (ticker, sector, date.year) not in tickerDataBySectorYear:
         newTicker = {'first_close_date': date,
-                     'first_close_value': ticker,
+                     'first_close_value': closePrice,
                      'last_close_date': date,
-                     'last_close_value': ticker,
+                     'last_close_value': closePrice,
                      'total_volume': volume}
         tickerDataBySectorYear[(ticker, sector, date.year)] = newTicker
     # the ticker in that year (with that sector) has been seen, update it
@@ -59,10 +59,10 @@ for line in sys.stdin:
         currTicker = tickerDataBySectorYear[(ticker, sector, date.year)]
         if date < currTicker['first_close_date']:
             currTicker['first_close_date'] = date
-            currTicker['first_close_value'] = ticker
+            currTicker['first_close_value'] = closePrice
         if date > currTicker['last_close_date']:
             currTicker['last_close_date'] = date
-            currTicker['last_close_value'] = ticker
+            currTicker['last_close_value'] = closePrice
         currTicker['total_volume'] += volume
 
 # aggregate the single ticker and year data by sector
@@ -86,7 +86,7 @@ for (ticker, sector, year) in tickerDataBySectorYear:
         currData = aggregatedSectorYearData[(sector, year)]
         currData['sum_initial_close'] += initialClose
         currData['sum_final_close'] += finalClose
-        if percVar > currData['maxperc_var_value']:
+        if percVar > currData['max_perc_var_value']:
             currData['max_perc_var_ticker'] = ticker
             currData['max_perc_var_value'] = percVar
         if volume > currData['max_total_volume_value']:
@@ -98,9 +98,9 @@ for (ticker, sector, year) in tickerDataBySectorYear:
 # aggregatedSectorYearData entries are in the format: ('Sector', Year): {'min': 1, 'max': 2, ...}
 sortedResults = sorted(aggregatedSectorYearData.items(),
                        # takes the first argument in (key, value), and the first argument in key=(sector, year)
-                       # it will return a list of ordered keys (by their partial value, sector)
-                       key=lambda single_entry: single_entry[0][0],
-                       # orders the sectors by ascending alphabetical order
+                       # it will return a list of ordered keys (by sector and then year)
+                       key=lambda single_entry: single_entry[0],
+                       # orders the sectors (and years) by ascending alphabetical order
                        reverse=False)
 
 # each result has the format of aggregatedSectorYearData entries, plus a new field for the total percent variation
@@ -113,7 +113,9 @@ for result in sortedResults:
     finalCloseSum = currResult['sum_final_close']
     currResult['total_perc_var'] = calculatePercVar(initialCloseSum, finalCloseSum)
 
-    print('{:<10s}\t{}\t{:>25}%\t{:<10s}\t{:>25}%\t:<10s}\t{}'.format(
+# more human readable text file, but causes troubles when opening in a spreadsheet
+#   print('{:<25s}\t{}\t{:<15}%\t{:>5s}\t{:<15}%\t{:>5s}\t{:<15}'.format(
+    print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(
         sector,
         year,
         currResult['total_perc_var'],
@@ -121,13 +123,3 @@ for result in sortedResults:
         currResult['max_perc_var_value'],
         currResult['max_total_volume_ticker'],
         currResult['max_total_volume_value']))
-
-# structure to save the aggregated values from the previous one
-#   aggregatedSectorYearData[('TECH', 2012)] = {
-#       'sum_initial_close': 4000,
-#       'sum_final_close': 6000,
-#       'max_perc_var_ticker': 'AAPL',
-#       'max_perc_var_value': 75,
-#       'max_total_volume_ticker': 'AAPL',
-#       'max_total_volume_value': 3000000
-#       }
