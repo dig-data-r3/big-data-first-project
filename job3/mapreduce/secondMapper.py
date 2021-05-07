@@ -4,4 +4,5 @@
 import sys
 
 for line in sys.stdin:
-    print(line)
+    ticker, month, percVar = line.strip().split('\t')
+    print('{}\t{}\t{}'.format(ticker, month, percVar))
