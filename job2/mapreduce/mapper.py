@@ -37,6 +37,10 @@ for row in sys.stdin:
     ticker, _, closePrice, _, _, _, volume, date = row.strip().split(',')
     date = datetime.strptime(date, '%Y-%m-%d').date()
 
+    # the ticker had a null sector, ignore it
+    if ticker not in ticker_to_sector:
+        continue
+
     # write the separated fields to standard output, applying the necessary filtering
     if START_YEAR <= date.year <= END_YEAR:
         # the join adds a column sector
