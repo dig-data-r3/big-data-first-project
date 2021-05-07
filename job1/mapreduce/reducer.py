@@ -64,7 +64,9 @@ for result in sortedResults:
     tickerResults = result[1]
     tickerResults['perc_var'] = (tickerResults['last_quot_price'] - tickerResults['first_quot_price']) / \
         tickerResults['first_quot_price'] * 100
-    print('{:<10s}\t{}\t{}\t{:>25}%\t{:<20}\t{:<20}'.format(
+
+#   print('{:<10s}\t{}\t{}\t{:>25}%\t{:<20}\t{:<20}'.format(
+    print('{}\t{}\t{}\t{}\t{}\t{}'.format(
         tickerName,
         tickerResults['first_quot_date'],
         tickerResults['last_quot_date'],

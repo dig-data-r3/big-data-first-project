@@ -16,4 +16,9 @@ for row in sys.stdin:
     ticker, _, closePrice, _, minPrice, maxPrice, _, date = row.split(',')
 
     # write the separated fields to standard output
-    print('%s\t%s\t%s\t%s\t%s' % (ticker, closePrice, minPrice, maxPrice, date))
+    print('{}\t{}\t{}\t{}\t{}'.format(
+        ticker,
+        closePrice,
+        minPrice,
+        maxPrice,
+        date))
