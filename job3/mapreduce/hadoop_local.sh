@@ -1,7 +1,7 @@
 #!/bin/bash
 
-hdfs dfs -rm -r output/job3_mapreduce/
-#hdfs dfs -rm -r tmp/
+#hdfs dfs -rm -r output/job3_mapreduce/
+hdfs dfs -rm -r tmp/
 cd "$(dirname "$0")" || exit
   # -D mapreduce.job.reduces=2 \
   #- D stream.num.map.output.key.fields=3 \
