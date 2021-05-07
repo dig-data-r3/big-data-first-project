@@ -30,15 +30,8 @@ for row in sys.stdin:
         # if one of the fields is not formatted correctly
         continue
 
-    # insert ticker data in the dict
-    if (ticker not in tickerToMonthVar) or (date.month not in tickerToMonthVar[ticker]):
-        currTickerMonth = {'first_close': closePrice,
-                           'last_close': closePrice,
-                           'first_date': date,
-                           'last_date': date}
-        tickerToMonthVar[ticker][date.month] = currTickerMonth
     # the ticker and month are already in the dict, update them
-    else:
+    if (ticker in tickerToMonthVar) and (date.month in tickerToMonthVar[ticker]):
         currTickerMonth = tickerToMonthVar[ticker][date.month]
         if date < currTickerMonth['first_date']:
             currTickerMonth['first_close'] = closePrice
@@ -46,14 +39,25 @@ for row in sys.stdin:
         if date > currTickerMonth['last_date']:
             currTickerMonth['last_close'] = closePrice
             currTickerMonth['last_date'] = date
+    # insert ticker data in the dict
+    else:
+        currTickerMonth = {'first_close': closePrice,
+                           'last_close': closePrice,
+                           'first_date': date,
+                           'last_date': date}
+        if ticker not in tickerToMonthVar:
+            tickerToMonthVar[ticker] = {date.month: currTickerMonth}
+        else:
+            tickerToMonthVar[ticker][date.month] = currTickerMonth
 
-    # print the data structure calculating the monthly percent variation
-    for ticker in tickerToMonthVar:
-        monthData = tickerToMonthVar[ticker]
-        # iterate over all months for the ticker
-        for month in monthData:
-            initialClose = monthData['first_close']
-            finalClose = monthData['last_close']
-            # prints ('AAPL', 3, 25.3) separating each month for the same ticker (put together in next mapreduce)
-            print('{}\t{}\t{}'.format(ticker, month, calculatePercVar(initialClose, finalClose)))
+
+# print the data structure calculating the monthly percent variation
+for ticker in tickerToMonthVar:
+    yearData = tickerToMonthVar[ticker]
+    # iterate over all months for the ticker
+    for month in yearData:
+        initialClose = yearData[month]['first_close']
+        finalClose = yearData[month]['last_close']
+        # prints ('AAPL', 3, 25.3) separating each month for the same ticker (put together in next mapreduce)
+        print('{}\t{}\t{}'.format(ticker, month, calculatePercVar(initialClose, finalClose)))
 
