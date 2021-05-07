@@ -34,7 +34,11 @@ aggregatedSectorYearData = {}
 #       'max_vol_incr_ticker': 'AAPL',
 #       'max_vol_incr_value': 2000}, ...}
 # this is not needed, to provide results iterate over previous structure and compute the perc var
-#results = {}
+# results = {}
+
+
+def calculatePercVar(initialValue, finalValue):
+    return (finalValue - initialValue) / initialValue * 100
 
 
 # input comes from STDIN
@@ -61,6 +65,7 @@ for line in sys.stdin:
                      'last_close_value': ticker,
                      'total_volume': volume}
         tickerDataBySectorYear[(ticker, sector, date.year)] = newTicker
+    # the ticker in that year (with that sector) has been seen, update it
     else:
         currTicker = tickerDataBySectorYear[(ticker, sector, date.year)]
         if date < currTicker['first_close_date']:
@@ -71,19 +76,33 @@ for line in sys.stdin:
             currTicker['last_close_value'] = ticker
         currTicker['total_volume'] += volume
 
-# structure to save the aggregated values from the previous one
-#   aggregatedSectorYearData[('TECH', 2012)] = {
-#       'sum_initial_close': 4000,
-#       'sum_final_close': 6000,
-#       'max_perc_var_ticker': 'AAPL',
-#       'max_perc_var_value': 75,
-#       'max_total_volume_ticker': 'AAPL',
-#       'max_total_volume_value': 3000000
-#       }
-
 # aggregate the single ticker and year data by sector
 for (ticker, sector, year) in tickerDataBySectorYear:
+    currTicker = tickerDataBySectorYear[(ticker, sector, year)]
+    initialClose = currTicker['first_close_value']
+    finalClose = currTicker['last_close_value']
+    percVar = calculatePercVar(initialClose, finalClose)
+    volume = currTicker['total_volume']
+    # create a new dict to save the data
     if (sector, year) not in aggregatedSectorYearData:
+        newData = {'sum_initial_close': initialClose,
+                   'sum_final_close': finalClose,
+                   'max_perc_var_ticker': ticker,
+                   'max_perc_var_value': percVar,
+                   'max_total_volume_ticker': ticker,
+                   'max_total_volume_value': volume}
+        aggregatedSectorYearData[(sector, year)] = newData
+    # update the existing data
+    else:
+        currData = aggregatedSectorYearData[(sector, year)]
+        currData['sum_initial_close'] += initialClose
+        currData['sum_final_close'] += finalClose
+        if percVar > currData['maxperc_var_value']:
+            currData['max_perc_var_ticker'] = ticker
+            currData['max_perc_var_value'] = percVar
+        if volume > currData['max_total_volume_value']:
+            currData['max_total_volume_ticker'] = ticker
+            currData['max_total_volume_value'] = volume
 
 
 # # sort the results from the most recent to old quotation dates
