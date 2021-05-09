@@ -20,7 +20,7 @@ LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/h
 
 LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stocks.csv' OVERWRITE INTO TABLE docs2;
 
--- sector to year
+-- For each sector -> year of the date_price
 create table sector_2_date as
 select distinct d2.sector, extract(year from d1.price_date)
 from docs1 as d1 left join docs2 as d2 on d1.ticker = d2.ticker
@@ -28,7 +28,7 @@ order by d2.sector, `_c1`;
 
 alter table sector_2_date change `_c1` year int;
 
---sector to min/max date
+-- For each sector and year -> date of the first quotation of the year, date of the last quotation of the year
 create table sector_min_max as
 select d2.sector, sd.year, min(d1.price_date) as first_date, max(d1.price_date) as last_date
 from docs1 as d1
@@ -38,7 +38,7 @@ where sd.year >=2009 and sd.year <= 2018
 group by d2.sector, sd.year
 order by sector, year;
 
--- sector to first quotation
+-- For each sector and year -> sum of all the quotations in the first date for that year
 create table sector_to_min_quot as
 select d2.sector, sm.year, sum(d1.close_price) as first_quot
 from docs1 as d1
@@ -48,7 +48,7 @@ where d1.price_date = sm.first_date
 group by d2.sector, sm.year
 order by d2.sector, sm.year;
 
--- sector to last quotation
+-- For each sector and year -> sum of all the quotations in the last date for that year
 create table sector_to_max_quot as
 select d2.sector, sm.year, sum(d1.close_price) as last_quot
 from docs1 as d1
@@ -59,8 +59,9 @@ group by d2.sector, sm.year
 order by d2.sector, sm.year;
 
 
--- Visualize the output table
+
 -- working on (b)
+
 --select ticker, max(((max_table.max_close_price - min_table.min_close_price) / min_table.min_close_price) * 100) as variation, price_date
 --from docs d
 --join (
@@ -77,7 +78,7 @@ order by d2.sector, sm.year;
 
 
 
---results
+-- Show results
 select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation
 from docs1 as d1
 left join docs2 as d2 on d1.ticker = d2.ticker
@@ -96,8 +97,10 @@ order by d2.sector, smin.year;
 -- (c) l’azione del settore che ha avuto il maggior  volume  di transazioninell’anno(con  indicazione  del  volume).
 -- Il report  deve  essere  ordinato  per  nome  del settore.
 
---CONSUMER DURABLES	2009	54.887800
---CONSUMER DURABLES	2009	40.518400
+
+
+-- Query per verificare a mano se i risultati del punto (a) sono giusti
+-- stampa per il 2010 e per il settore CONSUMER DURABLES la somma delle quotazioni in ogni data
 
 --select d1.price_date, sum(d1.close_price)
 --from docs1 d1 left join docs2 d2 on d1.ticker = d2.ticker
@@ -105,6 +108,12 @@ order by d2.sector, smin.year;
 --group by d1.price_date
 --order by d1.price_date;
 
--- 2009-01-02	868.4795521497730
--- 2009-12-31	1345.1686422973870
--- ((13451686422973870 − 8684795521497730) ÷ 8684795521497730) × 100 = 54.887800
+-- esempio
+
+-- Output from Results
+-- CONSUMER DURABLES	2009	12.987500
+
+-- Output dalla query di verifica
+-- 2010-12-31	2500.1176440045238
+-- 2010-01-04	2212.7374958395961
+-- ((2500,1176440045238 − 2212,7374958395961) ÷ 2212,7374958395961) × 100 = 12,987539132
