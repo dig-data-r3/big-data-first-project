@@ -68,10 +68,9 @@ order by d2.sector, sm.year;
 
 
 
-
-
-
--- working on (b)
+------------------------
+-- Usefull for task  (b)
+------------------------
 
 create table sector_year_to_tickerFirstQuotation as
 select d2.sector, sm.year, d1.ticker, close_price as first_quotation
@@ -92,12 +91,35 @@ order by d2.sector, sm.year;
 
 
 create table sector_year_to_tickerFirstLastQuotation as
+select s1.sector, s1.year, s1.ticker, s1.first_quotation, s2.last_quotation
+from sector_year_to_tickerFirstQuotation as s1
+left join sector_year_to_tickerLastQuotation as s2
+on (s1.sector = s2.sector and s1.year = s2.year and s1.ticker = s2.ticker)
+order by s1.sector, s1.year;
 
-select
-from sector_year_to_tickerFirstQuotation as sfirst
-left join sector_year_to_tickerLastQuotation as slast
 
-order by sfirst.sector, sfirst.year;
+create table sector_year_to_variation as
+select sector, year, ticker, max(((last_quotation - first_quotation)/first_quotation)*100) as variation
+from sector_year_to_tickerFirstLastQuotation
+group by sector, year, ticker;
+
+
+create table sector_year_to_maxVariation as
+select sector, year, max(variation) as max_variation
+from sector_year_to_variation
+group by sector, year;
+
+
+create table sector_year_to_maxTicker as
+select smax.sector, smax.year, sv.ticker, smax.max_variation
+from sector_year_to_maxVariation as smax
+left join sector_year_to_variation as sv on smax.sector = sv.sector and smax.year = sv.year
+where max_variation = variation;
+
+
+-----------------------
+-- Usefull for task (c)
+-----------------------
 
 
 
@@ -107,14 +129,16 @@ order by sfirst.sector, sfirst.year;
 
 -- Show results
 
-select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation
+select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation, max(sy.ticker), max(sy.max_variation)
 from docs1 as d1
 left join docs2 as d2 on d1.ticker = d2.ticker
 left join sector_to_min_quot as smin on d2.sector = smin.sector and smin.year = extract(year from d1.price_date)
 left join sector_to_max_quot as smax on d2.sector = smax.sector and smax.year = extract(year from d1.price_date)
+left join sector_year_to_maxTicker sy on d2.sector = sy.sector and sy.year = extract(year from d1.price_date)
 where smin.year >=2009 and smin.year <= 2018 and smax.year >=2009 and smax.year <= 2018 and d2.sector != "N/A"
 group by d2.sector, smin.year
-order by d2.sector, smin.year;
+order by d2.sector, smin.year
+limit 20;
 
 
 
