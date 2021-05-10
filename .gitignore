@@ -1,5 +1,11 @@
+# Derby metastore and log
+derby.log
+metastore_db/
+
+# Datasets, pdfs and ide files
 *.csv
 *.pdf
+.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

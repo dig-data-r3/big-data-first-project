@@ -6,7 +6,7 @@ CREATE TABLE docs (ticker STRING, open_price DECIMAL(38,13), close_price DECIMAL
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
 
 -- Put the dataset into the input table
-LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stock_prices.csv' OVERWRITE INTO TABLE docs;
+LOAD DATA INPATH 'input/historical_stock_prices.csv' OVERWRITE INTO TABLE docs;
 
 
 -- Visualize the output table
