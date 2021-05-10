@@ -122,6 +122,23 @@ where max_variation = variation;
 -----------------------
 
 
+create table sector_year_ticker_to_volumeSum as
+select sy.sector, sy.year, d1.ticker, sum(d1.volume) as volume
+from docs1 as d1
+right join sector_year_to_maxTicker as sy on d1.ticker = sy.ticker
+group by sy.sector, sy.year, d1.ticker;
+
+create table sector_year_to_maxVolume as
+select sector, year, max(volume) as maxVolume
+from sector_year_ticker_to_volumeSum
+group by sector, year
+order by sector, year;
+
+create table sector_year_toMaxVolumeTicker as
+select ayt.sector, ayt.year, ayt.ticker as v_ticker, ayt.volume
+from sector_year_ticker_to_volumeSum as ayt
+left join sector_year_to_maxVolume as aym on ayt.sector = aym.sector and ayt.year = aym.year
+where volume = maxVolume;
 
 
 
@@ -129,16 +146,16 @@ where max_variation = variation;
 
 -- Show results
 
-select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation, max(sy.ticker), max(sy.max_variation)
+select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation, max(sy.ticker), max(sy.max_variation), min(v_ticker), max(syv.volume)
 from docs1 as d1
 left join docs2 as d2 on d1.ticker = d2.ticker
 left join sector_to_min_quot as smin on d2.sector = smin.sector and smin.year = extract(year from d1.price_date)
 left join sector_to_max_quot as smax on d2.sector = smax.sector and smax.year = extract(year from d1.price_date)
 left join sector_year_to_maxTicker sy on d2.sector = sy.sector and sy.year = extract(year from d1.price_date)
+left join sector_year_toMaxVolumeTicker as syv on d2.sector = syv.sector and syv.year = extract(year from d1.price_date)
 where smin.year >=2009 and smin.year <= 2018 and smax.year >=2009 and smax.year <= 2018 and d2.sector != "N/A"
 group by d2.sector, smin.year
-order by d2.sector, smin.year
-limit 20;
+order by d2.sector, smin.year;
 
 
 
@@ -146,7 +163,7 @@ limit 20;
 -- Un  job  che  sia in  grado  di  generare un report contenente, per ciascun settore  e  per  ciascun anno del  periodo  2009-2018:
 -- (a) la  variazione percentuale della  quotazione del settore nell’anno
 -- (b) l’azione del settore che ha avuto il maggior incremento percentuale nell’anno (con indicazione dell’incremento) e
--- (c) l’azione del settore che ha avuto il maggior  volume  di transazioninell’anno(con  indicazione  del  volume).
+-- (c) l’azione del settore che ha avuto il maggior  volume  di transazioni nell’anno (con  indicazione  del  volume).
 -- Il report  deve  essere  ordinato  per  nome  del settore.
 
 
@@ -169,3 +186,17 @@ limit 20;
 -- 2010-12-31	2500.1176440045238
 -- 2010-01-04	2212.7374958395961
 -- ((2500,1176440045238 − 2212,7374958395961) ÷ 2212,7374958395961) × 100 = 12,987539132
+
+drop table sector_2_date;
+drop table sector_min_max;
+drop table sector_to_min_quot;
+drop table sector_to_max_quot;
+drop table sector_year_to_tickerFirstQuotation;
+drop table sector_year_to_tickerLastQuotation;
+drop table sector_year_to_tickerFirstLastQuotation;
+drop table sector_year_to_variation;
+drop table sector_year_to_maxVariation;
+drop table sector_year_to_maxTicker;
+drop table sector_year_ticker_to_volumeSum;
+drop table sector_year_to_maxVolume;
+drop table sector_year_toMaxVolumeTicker;
