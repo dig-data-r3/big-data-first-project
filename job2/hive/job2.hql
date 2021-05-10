@@ -20,7 +20,9 @@ LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/h
 
 LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stocks.csv' OVERWRITE INTO TABLE docs2;
 
+
 -- For each sector -> year of the date_price
+
 create table sector_2_date as
 select distinct d2.sector, extract(year from d1.price_date)
 from docs1 as d1 left join docs2 as d2 on d1.ticker = d2.ticker
@@ -28,7 +30,9 @@ order by d2.sector, `_c1`;
 
 alter table sector_2_date change `_c1` year int;
 
+
 -- For each sector and year -> date of the first quotation of the year, date of the last quotation of the year
+
 create table sector_min_max as
 select d2.sector, sd.year, min(d1.price_date) as first_date, max(d1.price_date) as last_date
 from docs1 as d1
@@ -38,7 +42,9 @@ where sd.year >=2009 and sd.year <= 2018
 group by d2.sector, sd.year
 order by sector, year;
 
+
 -- For each sector and year -> sum of all the quotations in the first date for that year
+
 create table sector_to_min_quot as
 select d2.sector, sm.year, sum(d1.close_price) as first_quot
 from docs1 as d1
@@ -48,7 +54,9 @@ where d1.price_date = sm.first_date
 group by d2.sector, sm.year
 order by d2.sector, sm.year;
 
+
 -- For each sector and year -> sum of all the quotations in the last date for that year
+
 create table sector_to_max_quot as
 select d2.sector, sm.year, sum(d1.close_price) as last_quot
 from docs1 as d1
@@ -60,31 +68,51 @@ order by d2.sector, sm.year;
 
 
 
+
+
+
 -- working on (b)
 
---select ticker, max(((max_table.max_close_price - min_table.min_close_price) / min_table.min_close_price) * 100) as variation, price_date
---from docs d
---join (
---select d.ticker as max_ticker, d.close_price as max_close_price
---from docs1 d
---join sector_min_max as smm on (d.ticker = smm.ticker and d.price_date = smm.last_date)
---) max_table on d.ticker = max_table.max_ticker
---join (
---select d.ticker as min_ticker, d.close_price as min_close_price
---from docs d
---join (select ticker as min_ticker, min(price_date) as min_price_date FROM docs group by ticker) min_table on (d.ticker = min_table.min_ticker and d.price_date <= min_table.min_price_date)
---) min_table on d.ticker = min_table.min_ticker
---group by ticker, price_date;
+create table sector_year_to_tickerFirstQuotation as
+select d2.sector, sm.year, d1.ticker, close_price as first_quotation
+from docs1 as d1
+left join docs2 as d2 on d1.ticker = d2.ticker
+left join sector_min_max as sm on d2.sector = sm.sector
+where d1.price_date = sm.first_date
+order by d2.sector, sm.year;
+
+
+create table sector_year_to_tickerLastQuotation as
+select d2.sector, sm.year, d1.ticker, close_price as last_quotation
+from docs1 as d1
+left join docs2 as d2 on d1.ticker = d2.ticker
+left join sector_min_max as sm on d2.sector = sm.sector
+where d1.price_date = sm.last_date
+order by d2.sector, sm.year;
+
+
+create table sector_year_to_tickerFirstLastQuotation as
+
+select
+from sector_year_to_tickerFirstQuotation as sfirst
+left join sector_year_to_tickerLastQuotation as slast
+
+order by sfirst.sector, sfirst.year;
+
+
+
+
 
 
 
 -- Show results
+
 select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation
 from docs1 as d1
 left join docs2 as d2 on d1.ticker = d2.ticker
 left join sector_to_min_quot as smin on d2.sector = smin.sector and smin.year = extract(year from d1.price_date)
 left join sector_to_max_quot as smax on d2.sector = smax.sector and smax.year = extract(year from d1.price_date)
-where smin.year >=2009 and smin.year <= 2018 and smax.year >=2009 and smax.year <= 2018
+where smin.year >=2009 and smin.year <= 2018 and smax.year >=2009 and smax.year <= 2018 and d2.sector != "N/A"
 group by d2.sector, smin.year
 order by d2.sector, smin.year;
 
