@@ -1,17 +1,111 @@
 -- Drop tables if exist
-DROP TABLE docs;
+drop table docs1;
+drop table docs2;
 
--- Create the input table
-CREATE TABLE docs (ticker STRING, open_price DECIMAL(15,13), close_price DECIMAL(15,13), adj_close DECIMAL(15,13), low DECIMAL(15,13), high DECIMAL(15,13), volume INT, price_date DATE )
+
+-- Create the input table 1
+CREATE TABLE docs1 (ticker STRING, open_price DECIMAL(38,13), close_price DECIMAL(38,13), adj_close DECIMAL(38,13), low DECIMAL(38,13), high DECIMAL(38,13), volume INT, price_date DATE )
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
 
--- Put the dataset into the input table
-LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/input/historical_stock_prices.csv' OVERWRITE INTO TABLE docs;
+-- Create the input table 2
+CREATE TABLE docs2 (ticker STRING, exch STRING, name STRING, sector STRING, industry STRING)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+   "separatorChar" = ",",
+   "quoteChar"     = "\""
+);
+
+
+-- Put the dataset into input tables
+LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stock_prices.csv' OVERWRITE INTO TABLE docs1;
+
+LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stocks.csv' OVERWRITE INTO TABLE docs2;
+
+
+
+
+create table 2017_data as
+select ticker, price_date, extract(month from price_date), close_price
+from docs1
+where extract(year from price_date) = 2017
+order by ticker, price_date;
+alter table 2017_data change `_c2` month int;
+
+
+create table ticker_month_to_max_min_date as
+select ticker, month, min(price_date) as min_date, max(price_date) as max_date
+from 2017_data
+group by ticker, month;
+
+
+create table ticker_to_first_month_quotation as
+select d.ticker, d.month, d.close_price
+from 2017_data as d
+left join ticker_month_to_max_min_date as tm on d.ticker = tm.ticker
+where price_date = min_date;
+
+
+create table ticker_to_last_month_quotation as
+select d.ticker, d.month, d.close_price
+from 2017_data as d
+left join ticker_month_to_max_min_date as tm on d.ticker = tm.ticker
+where price_date = max_date;
+
+
+create table ticker_to_first_last_month_quotation as
+select first.ticker, first.month, first.close_price as first_quotation, last.close_price as last_quotation
+from ticker_to_first_month_quotation as first
+left join ticker_to_last_month_quotation as last
+on first.ticker = last.ticker and first.month = last.month
+order by ticker, month;
+
+
+create table ticker_month_to_variation as
+select ticker, month, (((last_quotation - first_quotation)/first_quotation)*100) as variation
+from ticker_to_first_last_month_quotation
+order by ticker, month;
+
+
+create table variations_comparison as
+select t1.ticker as ticker_1, t2.ticker as ticker_2, t1.month, cast(t1.variation as decimal(10,2)) as variation_1, cast(t2.variation as decimal(10,2)) as variation_2
+from ticker_month_to_variation as t1, ticker_month_to_variation as t2
+where t1.ticker != t2.ticker and t1.month = t2.month and (abs(t1.variation - t2.variation) <= 1.5)
+order by ticker_1, ticker_2, t1.month;
+
+
+
+-- Show results
+select ticker_1, ticker_2,
+max(case when month="1" then "GEN:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as gen,
+max(case when month="2" then "FEB:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as feb,
+max(case when month="3" then "MAR:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as mar,
+max(case when month="4" then "APR:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as apr,
+max(case when month="5" then "MAG:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as mag,
+max(case when month="6" then "GIU:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as giu,
+max(case when month="7" then "LUG:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as lug,
+max(case when month="8" then "AGO:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as ago,
+max(case when month="9" then "SET:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as sep,
+max(case when month="10" then "OTT:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as ott,
+max(case when month="11" then "NOV:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as nov,
+max(case when month="12" then "DIC:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as dic
+from variations_comparison
+group by ticker_1, ticker_2;
+
 
 
 -- SPECIFICHE
 
--- Un job in grado di generarele coppie di aziende che si somigliano (sulla base di una soglia scelta a piacere) in terminidi variazione
+-- Un job in grado di generarele coppie di aziende che si somigliano (sulla base di una soglia scelta a piacere) in termini di variazione
 -- percentuale mensile nell’anno 2017 mostrando l’andamento mensile delle due aziende(es.Soglia=1%, coppie: 1:{Apple, Intel}:GEN: Apple
 -- +2%, Intel +2,5%, FEB: Apple +3%, Intel +2,7%, MAR: Apple +0,5%, Intel +1,2%, ...; 2:{Amazon, IBM}: GEN: Amazon +1%, IBM +0,5%, FEB:
 -- Amazon +0,7%, IBM +0,5%,MAR: Amazon +1,4%, IBM +0,7%,..)
+
+
+-- Drop useless tables
+drop table 2017_data;
+drop table ticker_month_to_max_min_date;
+drop table ticker_to_first_month_quotation;
+drop table ticker_to_last_month_quotation,
+drop table ticker_to_first_last_month_quotation;
+drop table ticker_month_to_variation;
+drop table variations_comparison;;
