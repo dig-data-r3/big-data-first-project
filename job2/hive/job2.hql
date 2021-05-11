@@ -167,6 +167,21 @@ order by d2.sector, smin.year;
 -- Il report  deve  essere  ordinato  per  nome  del settore.
 
 
+-- Drop useless tables
+drop table sector_2_date;
+drop table sector_min_max;
+drop table sector_to_min_quot;
+drop table sector_to_max_quot;
+drop table sector_year_to_tickerFirstQuotation;
+drop table sector_year_to_tickerLastQuotation;
+drop table sector_year_to_tickerFirstLastQuotation;
+drop table sector_year_to_variation;
+drop table sector_year_to_maxVariation;
+drop table sector_year_to_maxTicker;
+drop table sector_year_ticker_to_volumeSum;
+drop table sector_year_to_maxVolume;
+drop table sector_year_toMaxVolumeTicker;
+
 
 -- Query per verificare a mano se i risultati del punto (a) sono giusti
 -- stampa per il 2010 e per il settore CONSUMER DURABLES la somma delle quotazioni in ogni data
@@ -187,16 +202,4 @@ order by d2.sector, smin.year;
 -- 2010-01-04	2212.7374958395961
 -- ((2500,1176440045238 − 2212,7374958395961) ÷ 2212,7374958395961) × 100 = 12,987539132
 
-drop table sector_2_date;
-drop table sector_min_max;
-drop table sector_to_min_quot;
-drop table sector_to_max_quot;
-drop table sector_year_to_tickerFirstQuotation;
-drop table sector_year_to_tickerLastQuotation;
-drop table sector_year_to_tickerFirstLastQuotation;
-drop table sector_year_to_variation;
-drop table sector_year_to_maxVariation;
-drop table sector_year_to_maxTicker;
-drop table sector_year_ticker_to_volumeSum;
-drop table sector_year_to_maxVolume;
-drop table sector_year_toMaxVolumeTicker;
+
