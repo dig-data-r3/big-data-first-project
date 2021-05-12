@@ -94,7 +94,7 @@ results = percent_variation.join(min_price) \
     .join(max_price) \
     .map(lambda x: (x[0], (x[1][0] + (x[1][1],)))) \
     .sortBy(keyfunc=lambda x: x[1][1], ascending=False) \
-    .coalesce(1)
+    .coalesce(1)  # avoids having multiple (even hundreds) of part-* files as output (only one part-00000)
 
 # write all (ticker, (results)) pairs in file
 results.saveAsTextFile(output_filepath)
