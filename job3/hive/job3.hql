@@ -23,12 +23,13 @@ LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/h
 
 
 
-
+--
 create table 2017_data as
 select ticker, price_date, extract(month from price_date), close_price
 from docs1
 where extract(year from price_date) = 2017
 order by ticker, price_date;
+
 alter table 2017_data change `_c2` month int;
 
 
@@ -69,13 +70,12 @@ order by ticker, month;
 create table variations_comparison as
 select t1.ticker as ticker_1, t2.ticker as ticker_2, t1.month, cast(t1.variation as decimal(10,2)) as variation_1, cast(t2.variation as decimal(10,2)) as variation_2
 from ticker_month_to_variation as t1, ticker_month_to_variation as t2
-where t1.ticker != t2.ticker and t1.month = t2.month and (abs(t1.variation - t2.variation) <= 1.5)
+where t1.ticker > t2.ticker and t1.month = t2.month and (abs(t1.variation - t2.variation) <= 1)
 order by ticker_1, ticker_2, t1.month;
 
 
-
--- Show results
-select ticker_1, ticker_2,
+create table raw_results as
+select ticker_1 as t1, ticker_2 as t2,
 max(case when month="1" then "GEN:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as gen,
 max(case when month="2" then "FEB:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as feb,
 max(case when month="3" then "MAR:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as mar,
@@ -91,6 +91,13 @@ max(case when month="12" then "DIC:"||" "||"("||variation_1||"%"||", "||variatio
 from variations_comparison
 group by ticker_1, ticker_2;
 
+select * from raw_results
+where (gen!="" and feb!="" and mar!="" and apr!="" and mag!="" and giu!="" and lug!="" and ago!=""
+and sep!="" and ott!="" and nov!="" and dic!="");
+
+
+-- Show results
+
 
 
 -- SPECIFICHE
@@ -105,7 +112,13 @@ group by ticker_1, ticker_2;
 drop table 2017_data;
 drop table ticker_month_to_max_min_date;
 drop table ticker_to_first_month_quotation;
-drop table ticker_to_last_month_quotation,
+drop table ticker_to_last_month_quotation;
 drop table ticker_to_first_last_month_quotation;
 drop table ticker_month_to_variation;
 drop table variations_comparison;;
+drop table raw_results;
+
+
+hive --e "select * from raw_results
+where (gen!=\"\" and feb!=\"\" and mar!=\"\" and apr!=\"\" and mag!=\"\" and giu!=\"\" and lug!=\"\" and ago!=\"\"
+and sep!=\"\" and ott!=\"\" and nov!=\"\" and dic!=\"\");" > results.txt
