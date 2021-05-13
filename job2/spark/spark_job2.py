@@ -115,7 +115,8 @@ total_volume = hsp_sector.map(lambda line: (line[0], line[1][1])) \
 # after join: ((sector, ticker, year), ((first_close, first_date, last_close, last_date, perc_var), tot_volume))
 # it will result in ((sector, ticker, year), (first_close, first_date, last_close, last_date, percent_var, volume_sum))
 ticker_year_results = percent_variation.join(total_volume) \
-    .map(lambda x: (x[0], (x[1][0] + (x[1][1],))))
+    .map(lambda x: (x[0], (x[1][0] + (x[1][1],)))) \
+    .sortBy(keyfunc=lambda x: x[0][0], ascending=False)
 
 #result =
 
