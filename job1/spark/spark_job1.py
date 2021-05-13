@@ -98,3 +98,13 @@ results = percent_variation.join(min_price) \
 
 # write all (ticker, (results)) pairs in file
 results.saveAsTextFile(output_filepath)
+
+# # create an RDD with the output string (todo, last map before/after coalesce(1) ?)
+# output_string = ('{}\t{}\t{}\t{}\t{}\t{}'.format(results[0][0],  # ticker
+#                                                  results[1][0],  # first date
+#                                                  results[1][1],  # last date
+#                                                  results[1][2],  # percent variation
+#                                                  results[1][3],  # minimum price
+#                                                  results[1][4]))  # max price
+# spark.sparkContext.parallelize([output_string]) \
+#                   .saveAsTextFile(output_filepath)
