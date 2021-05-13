@@ -14,19 +14,27 @@ def parse_line(row):
     return next(csv_reader)
 
 
-def min_date(a, b):
-    date_a = datetime.strptime(a[2], '%Y-%m-%d').date()
-    date_b = datetime.strptime(b[2], '%Y-%m-%d').date()
-    if date_a <= date_b:
+def min_value(a, b, val_type, index):
+    if val_type == 'date':
+        val_a = datetime.strptime(a[index], '%Y-%m-%d').date()
+        val_b = datetime.strptime(b[index], '%Y-%m-%d').date()
+    else:
+        val_a = float(a[index])
+        val_b = float(b[index])
+    if val_a <= val_b:
         return a
     else:
         return b
 
 
-def max_date(a, b):
-    date_a = datetime.strptime(a[2], '%Y-%m-%d').date()
-    date_b = datetime.strptime(b[2], '%Y-%m-%d').date()
-    if date_a >= date_b:
+def max_value(a, b, val_type, index):
+    if val_type == 'date':
+        val_a = datetime.strptime(a[index], '%Y-%m-%d').date()
+        val_b = datetime.strptime(b[index], '%Y-%m-%d').date()
+    else:
+        val_a = float(a[index])
+        val_b = float(b[index])
+    if val_a >= val_b:
         return a
     else:
         return b
@@ -34,6 +42,13 @@ def max_date(a, b):
 
 def calculate_percent_variation(initial, final):
     return (float(final) - float(initial)) / float(initial) * 100
+
+
+def sum_tuple(a, b):
+    val_a = (float(a[0]), float(a[1]))
+    val_b = (float(b[0]), float(b[1]))
+    sum_tuples = [sum(i) for i in zip(*(val_a, val_b))]
+    return tuple(sum_tuples)
 
 
 # fields' index in a row (in historical_stock_prices.csv)
@@ -95,39 +110,47 @@ hs = historical_stocks.map(lambda line: parse_line(line)) \
 hsp_sector = hsp.join(hs) \
     .map(lambda x: ((x[1][1], int(x[1][0][2][0:4]), x[0]), x[1][0]))
 
-# this calculates the first and last quotation dates of each (ticker, year) pair
-# it also removes the volume field that remains (correct value calculated further down)
-first_quot_date = hsp_sector.reduceByKey(lambda a, b: min_date(a, b)) \
-    .map(lambda x: (x[0], (x[1][0], x[1][1])))
-last_quot_date = hsp_sector.reduceByKey(lambda a, b: max_date(a, b)) \
-    .map(lambda x: (x[0], (x[1][0], x[1][1])))
+# this calculates the first and last quotation dates (with values) of each (sector, ticker, year) tuple
+# each of these RDDs returns: ((sector, year, ticker), (close))
+first_quotation_close = hsp_sector.reduceByKey(lambda a, b: min_value(a, b, 'date', 2)) \
+    .map(lambda x: (x[0], x[1][0]))
+last_quotation_close = hsp_sector.reduceByKey(lambda a, b: max_value(a, b, 'date', 2)) \
+    .map(lambda x: (x[0], x[1][0]))
 
-# after join: ((sector, year, ticker), ((first_close, volume, first_date), (last_close, volume, last_date)))
-# we want to flatten as ((sector, year, ticker), (first_close, first_date, last_close, last_date, perc_var))
-percent_variation = first_quot_date.join(last_quot_date) \
-    .map(lambda x: (x[0], (x[1][0] + x[1][1] + (calculate_percent_variation(x[1][0][0], x[1][1][0]),))))
+# after join: ((sector, year, ticker), (first_close, last_close))
+# we add the percent variation: ((sector, year, ticker), (first_close, last_close, percent_var))
+ticker_percent_variation = first_quotation_close.join(last_quotation_close) \
+    .map(lambda x: (x[0], (x[1] + (calculate_percent_variation(x[1][0], x[1][1]), ))))
 
-# sum of all the volumes (line[1][1]) per (sector, year, ticker)
-total_volume = hsp_sector.map(lambda line: (line[0], line[1][1])) \
-    .reduceByKey(lambda a, b: int(a) + int(b))
+# calculates the ticker with maximum percent increase for each (sector, year)
+# outputs: ((sector, year), (max_ticker, percent_increase))
+ticker_max_percent_var = ticker_percent_variation.map(lambda x: ((x[0][0], x[0][1]), (x[0][2], x[1][2]))) \
+    .reduceByKey(lambda a, b: max_value(a, b, 'float', 1))
 
-# aggregates the sum of volumes and percent variation of a given (sector, ticker, year) pair
-# after join: ((sector, ticker, year), ((first_close, first_date, last_close, last_date, perc_var), tot_volume))
-# it will result in ((sector, ticker, year), (first_close, first_date, last_close, last_date, percent_var, volume_sum))
-ticker_year_results = percent_variation.join(total_volume) \
-    .map(lambda x: (x[0], (x[1][0] + (x[1][1],)))) \
-    .sortBy(keyfunc=lambda x: x[0][0], ascending=True)
+# sums of all the volumes' sum (line[1][1]) per (sector, year, ticker)
+# then it returns the ticker that has the max volume: ((sector, year), (max_ticker, volume))
+ticker_max_volume = hsp_sector.map(lambda line: (line[0], line[1][1])) \
+    .reduceByKey(lambda a, b: int(a) + int(b)) \
+    .map(lambda line: ((line[0][0], line[0][1]), (line[0][2], line[1]))) \
+    .reduceByKey(lambda a, b: max_value(a, b, 'int', 1))
 
-#result =
+# input: ((sector, year, ticker), (first_close, last_close, percent_var))
+# the first map removes the percent_var from the value of the line, and the ticker from the key
+# output: ((sector, year), (sector_year_percent_var))
+sector_year_percent_variation = ticker_percent_variation.map(lambda x: ((x[0][0], x[0][1]), (x[1][0], x[1][1]))) \
+    .reduceByKey(lambda a, b: sum_tuple(a, b)) \
+    .map(lambda x: (x[0], calculate_percent_variation(x[1][0], x[1][1])))
 
-# # join together all the calculated results, in the form (ticker, (first_date, last_date, percent_var, min, max))
-# # also it has to be ordered by last_date descending
-# results = percent_variation.join(min_price) \
-#     .map(lambda x: (x[0], (x[1][0] + (x[1][1],)))) \
-#     .join(max_price) \
-#     .map(lambda x: (x[0], (x[1][0] + (x[1][1],)))) \
-#     .sortBy(keyfunc=lambda x: x[1][1], ascending=False) \
-#     .coalesce(1)  # avoids having multiple (even hundreds) of part-* files as output (only one part-00000)
-#
-# # write all (ticker, (results)) pairs in file
-ticker_year_results.coalesce(1).saveAsTextFile(output_filepath)
+# aggregates the sector variation and the tickers with max variation and volume for a given (sector, year) pair
+# after first join: ((sector, year), (sector_percent_var, (max_var_ticker, percent_increase)))
+# after second join: ((sector, year), ((sector_var, ticker, percent_increase), (max_ticker, volume)))
+# it will result in ((sector, year), (sector_var, ticker, percent_increase, ticker, volume))
+results = sector_year_percent_variation.join(ticker_max_percent_var) \
+    .map(lambda x: (x[0], ((x[1][0], ) + (x[1][1])))) \
+    .join(ticker_max_volume) \
+    .map(lambda x: (x[0], (x[1][0] + x[1][1]))) \
+    .sortBy(keyfunc=lambda x: x[0], ascending=True) \
+    .coalesce(1)
+
+# # write all ((sector, year), (results...)) in a file
+results.saveAsTextFile(output_filepath)
