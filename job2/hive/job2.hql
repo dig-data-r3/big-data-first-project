@@ -21,7 +21,7 @@ LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/h
 LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stocks.csv' OVERWRITE INTO TABLE docs2;
 
 
--- For each sector -> year of the date_price
+-- For each sector -> year of the price date
 
 create table sector_2_date as
 select distinct d2.sector, extract(year from d1.price_date)
@@ -72,6 +72,8 @@ order by d2.sector, sm.year;
 -- Usefull for task  (b)
 ------------------------
 
+-- For each sector and year -> ticker with its first quotation for that year and that sector
+
 create table sector_year_to_tickerFirstQuotation as
 select d2.sector, sm.year, d1.ticker, close_price as first_quotation
 from docs1 as d1
@@ -80,6 +82,8 @@ left join sector_min_max as sm on d2.sector = sm.sector
 where d1.price_date = sm.first_date
 order by d2.sector, sm.year;
 
+
+-- For each sector and year -> ticker with its last quotation for that year and that sector
 
 create table sector_year_to_tickerLastQuotation as
 select d2.sector, sm.year, d1.ticker, close_price as last_quotation
@@ -90,6 +94,8 @@ where d1.price_date = sm.last_date
 order by d2.sector, sm.year;
 
 
+-- For each sector and year -> ticker with its first and last quotation for that year and that sector
+
 create table sector_year_to_tickerFirstLastQuotation as
 select s1.sector, s1.year, s1.ticker, s1.first_quotation, s2.last_quotation
 from sector_year_to_tickerFirstQuotation as s1
@@ -98,17 +104,24 @@ on (s1.sector = s2.sector and s1.year = s2.year and s1.ticker = s2.ticker)
 order by s1.sector, s1.year;
 
 
+-- For each sector, year and ticker -> ticker price variation in that year for that sector
+
 create table sector_year_to_variation as
 select sector, year, ticker, max(((last_quotation - first_quotation)/first_quotation)*100) as variation
 from sector_year_to_tickerFirstLastQuotation
 group by sector, year, ticker;
 
 
+
+-- For each sector and year -> the max price variation for that sector in that year
+
 create table sector_year_to_maxVariation as
 select sector, year, max(variation) as max_variation
 from sector_year_to_variation
 group by sector, year;
 
+
+-- For each sector and year -> the ticker with the max price variation for that sector in that year
 
 create table sector_year_to_maxTicker as
 select smax.sector, smax.year, sv.ticker, smax.max_variation
@@ -121,6 +134,7 @@ where max_variation = variation;
 -- Usefull for task (c)
 -----------------------
 
+-- For each sector, year and ticker -> sum of the volums
 
 create table sector_year_ticker_to_volumeSum as
 select sy.sector, sy.year, d1.ticker, sum(d1.volume) as volume
@@ -128,18 +142,23 @@ from docs1 as d1
 right join sector_year_to_maxTicker as sy on d1.ticker = sy.ticker
 group by sy.sector, sy.year, d1.ticker;
 
+
+-- For each sector and year  -> max value of the volume in that year for that sector
+
 create table sector_year_to_maxVolume as
 select sector, year, max(volume) as maxVolume
 from sector_year_ticker_to_volumeSum
 group by sector, year
 order by sector, year;
 
+
+-- For each sector and year -> ticker with the max value of the volume in that year for that sector
+
 create table sector_year_toMaxVolumeTicker as
 select ayt.sector, ayt.year, ayt.ticker as v_ticker, ayt.volume
 from sector_year_ticker_to_volumeSum as ayt
 left join sector_year_to_maxVolume as aym on ayt.sector = aym.sector and ayt.year = aym.year
 where volume = maxVolume;
-
 
 
 
@@ -201,5 +220,4 @@ drop table sector_year_toMaxVolumeTicker;
 -- 2010-12-31	2500.1176440045238
 -- 2010-01-04	2212.7374958395961
 -- ((2500,1176440045238 − 2212,7374958395961) ÷ 2212,7374958395961) × 100 = 12,987539132
-
 

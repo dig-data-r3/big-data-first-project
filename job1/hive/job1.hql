@@ -2,7 +2,7 @@
 DROP TABLE job1_hive;
 
 
--- Ticker -> Last close price
+-- For each ticker -> its last close price in the dataset
 
 create table ticker_to_maxDate as
 select d.ticker as max_ticker, d.close_price as max_close_price
@@ -12,7 +12,7 @@ FROM historical_stock_prices group by ticker) as max_table
 on (d.ticker = max_table.max_ticker and d.price_date >= max_table.max_price_date);
 
 
--- Ticker -> First close price
+-- For each ticker -> its first close price in the dataset
 
 create table ticker_to_minDate as
 select d.ticker as min_ticker, d.close_price as min_close_price
@@ -23,6 +23,7 @@ on (d.ticker = min_table.min_ticker and d.price_date <= min_table.min_price_date
 
 
 -- Saves the output table in hdfs path /users/hive/warehouse/
+-- Create results table
 CREATE TABLE job1_hive ROW FORMAT DELIMITED
 FIELDS TERMINATED BY '\t'
 LINES TERMINATED BY '\n' as
