@@ -65,7 +65,7 @@ from ticker_to_first_last_month_quotation
 order by ticker, month;
 
 
--- For each pair of tickers and month -> price variation for the first ticker and price variation for the ticker 2 in that month
+-- For each pair of tickers and month -> price variation for the first ticker and price variation for the second ticker in that month
 
 create table variations_comparison as
 select t1.ticker as ticker_1, t2.ticker as ticker_2, t1.month, cast(t1.variation as decimal(10,2)) as variation_1, cast(t2.variation as decimal(10,2)) as variation_2
