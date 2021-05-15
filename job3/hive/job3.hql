@@ -73,7 +73,9 @@ from ticker_month_to_variation as t1, ticker_month_to_variation as t2
 where t1.ticker > t2.ticker and t1.month = t2.month and (abs(t1.variation - t2.variation) <= 1)
 order by ticker_1, ticker_2, t1.month;
 
+
 -- Result table
+
 create table raw_results as
 select ticker_1 as t1, ticker_2 as t2,
 max(case when month="1" then "GEN:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as gen,
@@ -91,19 +93,12 @@ max(case when month="12" then "DIC:"||" "||"("||variation_1||"%"||", "||variatio
 from variations_comparison
 group by ticker_1, ticker_2;
 
+
 -- Show results
+
 select * from raw_results
 where (gen!="" and feb!="" and mar!="" and apr!="" and mag!="" and giu!="" and lug!="" and ago!=""
 and sep!="" and ott!="" and nov!="" and dic!="");
-
-
-
--- SPECIFICHE
-
--- Un job in grado di generarele coppie di aziende che si somigliano (sulla base di una soglia scelta a piacere) in termini di variazione
--- percentuale mensile nell’anno 2017 mostrando l’andamento mensile delle due aziende(es.Soglia=1%, coppie: 1:{Apple, Intel}:GEN: Apple
--- +2%, Intel +2,5%, FEB: Apple +3%, Intel +2,7%, MAR: Apple +0,5%, Intel +1,2%, ...; 2:{Amazon, IBM}: GEN: Amazon +1%, IBM +0,5%, FEB:
--- Amazon +0,7%, IBM +0,5%,MAR: Amazon +1,4%, IBM +0,7%,..)
 
 
 -- Drop useless tables

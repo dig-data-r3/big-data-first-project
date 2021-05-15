@@ -42,16 +42,3 @@ select * from job1_hive;
 -- Drop useless tables
 drop table ticker_to_maxDate;
 drop table ticker_to_minDate;
-
-
-
--- SPECIFICHE
-
--- Un job che sia in grado di generare un report contenente, per ciascuna azione:
--- (a) la data della prima quotazione,
--- (b) la data dell’ultima quotazione,
--- (c) la variazione percentuale della quotazione (differenza percentuale tra il primo e l’ultimo prezzo di chiusura presente nell’archivio),
--- (d) il prezzo massimo e quello minimo e
--- (e) (facoltativo) il massimo numero di giorni consecutivi in cui l’azione è cresciuta (chiusura maggiore
---     dell’apertura)con indicazione dell’anno in cui questo è avvenuto.
--- Il report deve essere ordinato per valori decrescenti del punto b.
