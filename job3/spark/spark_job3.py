@@ -13,9 +13,9 @@ def min_price_and_date(x, y):
     y_date = y[2]
 
     if x_date <= y_date:
-        return float(x_price)
+        return x[0], x_price, x_date
     else:
-        return float(y_price)
+        return y[0], y_price, y_date
 
 def max_price_and_date(x, y):
     x_price = x[1]
@@ -24,9 +24,9 @@ def max_price_and_date(x, y):
     y_date = y[2]
 
     if x_date >= y_date:
-        return float(x_price)
+        return x[0], x_price, x_date
     else:
-        return float(y_price)
+        return y[0], y_price, y_date
 
 
 # Create parser and set its arguments
@@ -50,21 +50,31 @@ split_input = historical_stock_prices.map(lambda line: line.strip().split(","))
 
 remove_first_row = split_input.filter(lambda line: line[0] != 'ticker')
 
-split_input_datetime = remove_first_row.map(lambda x: (x[0], x[2], datetime.strptime(x[7], "%Y-%m-%d").date()))
+split_input_datetime = remove_first_row.map(lambda x: (x[0], float(x[2]), datetime.strptime(x[7], "%Y-%m-%d").date()))
 
-data_2017 = split_input_datetime.filter(lambda x: x[2].year == 2010)
+data_2017 = split_input_datetime.filter(lambda x: x[2].year == 2017)
 
 ticker_month_to_list = data_2017.map(lambda x: ((x[0], x[2].month), x))
 
-ticker_month_to_mindate = ticker_month_to_list.reduceByKey(min_price_and_date)
+ticker_month_to_mindate = ticker_month_to_list.reduceByKey(min_price_and_date).map(lambda x: (x[0], x[1][1]))
 
-ticker_month_to_maxdate = ticker_month_to_list.reduceByKey(max_price_and_date)
+ticker_month_to_maxdate = ticker_month_to_list.reduceByKey(max_price_and_date).map(lambda x: (x[0], x[1][1]))
+
 
 ticker_month_variation = ticker_month_to_mindate.join(ticker_month_to_maxdate).map(lambda x: (x[0], ((x[1][1]-x[1][0])/x[1][0])*100))
 
 
-ticker_pairs_trashold = ticker_month_variation.cartesian(ticker_month_variation).filter(lambda x: abs(x[0][1] - x[1][1]) <= 100 and x[0][0][1]==x[1][0][1] and x[0][0][0] < x[1][0][0])
+ticker_pairs_trashold = ticker_month_variation.cartesian(ticker_month_variation).filter(lambda x: abs(x[0][1] - x[1][1]) <= 1 and x[0][0][1] == x[1][0][1] and x[0][0][0] < x[1][0][0])
 
 
-ticker_pair_to_variations = ticker_pairs_trashold.map(lambda x: ((x[0][0][0], x[1][0][0]), x[0][0][1], x[0][1], x[1][1])).foreach(print)
+ticker_pair_to_variations = ticker_pairs_trashold.map(lambda x: ((x[0][0][0], x[1][0][0]), (x[0][0][1], x[0][1], x[1][1])))
+
+results = ticker_pair_to_variations.groupByKey().filter(lambda x: len(x[1]) == 12)\
+    .map(lambda x: (x[0], sorted(list(x[1]), key=lambda y: y[0]))) \
+    .sortBy(keyfunc=lambda x: x[0], ascending=False) \
+    .coalesce(1)
+
+results.saveAsTextFile(output_filepath)
+
+
 
