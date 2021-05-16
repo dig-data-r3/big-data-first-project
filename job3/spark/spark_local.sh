@@ -1,0 +1,1 @@
+$SPARK_HOME/bin/spark-submit --master local ./spark_job3.py --input_path file:////home/fregarz/Scrivania/big-data-first-project/dataset/historical_stock_prices.csv --output_path file:///home/fregarz/Scrivania/big-data-first-project/job3/spark/results
