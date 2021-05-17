@@ -15,15 +15,15 @@ OVERWRITE INTO TABLE historical_stock_prices;
 
 
 CREATE TABLE historical_stocks (
-	ticker STRING,
-	exch STRING,
-	name STRING,
-	sector STRING,
-	industry STRING )
+    ticker STRING, 
+    exch STRING, 
+    name STRING, 
+    sector STRING, 
+    industry STRING)
 ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
 WITH SERDEPROPERTIES (
-    "separatorChar" = ",",
-    "quoteChar"     = "\""
+   "separatorChar" = ",",
+   "quoteChar"     = "\""
 )
 STORED AS TEXTFILE
 TBLPROPERTIES("skip.header.line.count"="1");

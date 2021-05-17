@@ -1,25 +1,10 @@
 -- Drop tables if exist
-drop table historical_stock_prices;
-drop table historical_stocks;
-
--- Create the input table 1
-CREATE TABLE historical_stock_prices (ticker STRING, open_price DECIMAL(38,13), close_price DECIMAL(38,13), adj_close DECIMAL(38,13), low DECIMAL(38,13), high DECIMAL(38,13), volume INT, price_date DATE )
-ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
-
--- Create the input table 2
-CREATE TABLE historical_stocks (ticker STRING, exch STRING, name STRING, sector STRING, industry STRING)
-ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
-WITH SERDEPROPERTIES (
-   "separatorChar" = ",",
-   "quoteChar"     = "\""
-);
+DROP TABLE job2_hive;
 
 
--- Put the dataset into input tables
-LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stock_prices.csv' OVERWRITE INTO TABLE historical_stock_prices;
-
-LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stocks.csv' OVERWRITE INTO TABLE historical_stocks;
-
+------------------------
+-- Usefull for task  (b)
+------------------------
 
 -- For each sector -> year of the price date
 
@@ -159,8 +144,9 @@ left join sector_year_to_maxVolume as aym on ayt.sector = aym.sector and ayt.pri
 where volume = maxVolume;
 
 
--- Show results
-
+-- Saves the output table in hdfs path /users/hive/warehouse/
+-- Create results table
+create table job2_hive as
 select d2.sector, smin.year, min(((smax.last_quot - smin.first_quot)/smin.first_quot)*100) as variation, max(sy.ticker), max(sy.max_variation), min(v_ticker), max(syv.volume)
 from historical_stock_prices as d1
 left join historical_stocks as d2 on d1.ticker = d2.ticker
@@ -172,6 +158,9 @@ where smin.year >=2009 and smin.year <= 2018 and smax.year >=2009 and smax.year 
 group by d2.sector, smin.year
 order by d2.sector, smin.year;
 
+
+-- Show results
+select * from job2_hive;
 
 
 -- Drop useless tables

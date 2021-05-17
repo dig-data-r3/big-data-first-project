@@ -1,21 +1,12 @@
 -- Drop tables if exist
-drop table docs1;
-
-
--- Create the input table 1
-CREATE TABLE docs1 (ticker STRING, open_price DECIMAL(38,13), close_price DECIMAL(38,13), adj_close DECIMAL(38,13), low DECIMAL(38,13), high DECIMAL(38,13), volume INT, price_date DATE )
-ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
-
-
--- Put the dataset into input tables
-LOAD DATA LOCAL INPATH '/home/fregarz/Scrivania/big-data-first-project/dataset/historical_stock_prices.csv' OVERWRITE INTO TABLE docs1;
+drop table job3_hive;
 
 
 -- Filters the database to show only 2017 data
 
 create table 2017_data as
 select ticker, price_date, extract(month from price_date), close_price
-from docs1
+from historical_stock_prices
 where extract(year from price_date) = 2017
 order by ticker, price_date;
 alter table 2017_data change `_c2` month int;
@@ -75,7 +66,6 @@ order by ticker_1, ticker_2, t1.month;
 
 
 -- Result table
-
 create table raw_results as
 select ticker_1 as t1, ticker_2 as t2,
 max(case when month="1" then "GEN:"||" "||"("||variation_1||"%"||", "||variation_2||"%"||")" else "" end) as gen,
@@ -95,10 +85,12 @@ group by ticker_1, ticker_2;
 
 
 -- Show results
-
+create table job3_hive as
 select * from raw_results
 where (gen!="" and feb!="" and mar!="" and apr!="" and mag!="" and giu!="" and lug!="" and ago!=""
 and sep!="" and ott!="" and nov!="" and dic!="");
+
+select * from job3_hive;
 
 
 -- Drop useless tables
