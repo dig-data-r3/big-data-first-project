@@ -35,10 +35,18 @@ def calculate_percent_variation(initial, final):
 
 def compare_months_variations(month_list1, month_list2):
     zip_object = zip(month_list1, month_list2)
-    for month1, month2 in zip_object:
-        if abs(month1[1] - month2[1]) > THRESHOLD:
+    for month_var1, month_var2 in zip_object:
+        if abs(month_var1[1] - month_var2[1]) > THRESHOLD:
             return False
     return True
+
+
+def merge_months_variations(month_list1, month_list2):
+    result_list = []
+    zip_object = zip(month_list1, month_list2)
+    for month_var1, month_var2 in zip_object:
+        result_list.append((MONTHS_LITERAL[month_var1[0]], (month_var1[1], month_var2[1])))
+    return result_list
 
 
 # fields' index in a row (in historical_stock_prices.csv)
@@ -53,6 +61,9 @@ DATE = 7
 
 # defines when two tickers are similar based on their monthly percent variation
 THRESHOLD = 1
+
+MONTHS_LITERAL = {1: 'GEN', 2: 'FEB', 3: 'MAR', 4: 'APR', 5: 'MAG', 6: 'GIU', 7: 'LUG', 8: 'AGO', 9: 'SET',
+                  10: 'OTT', 11: 'NOV', 12: 'DIC'}
 
 # Create parser and set its arguments
 parser = argparse.ArgumentParser()
@@ -116,17 +127,11 @@ ticker_aggregate_months = ticker_month_variation.map(lambda x: (x[0][0], (x[0][1
 # input: (ticker) : ([month_var_list])
 # after cartesian: ((ticker1) : ([month_var_list1]), (ticker2) : ([month_var_list2]))
 # Filter to get all pairs of tickers that are similar (percent_var difference per month <= threshold)
+# the conversion from int month to literal month takes place in merge_months_variations
 ticker_pairs_threshold = ticker_aggregate_months.cartesian(ticker_aggregate_months) \
-    .filter(lambda x: x[0][0] < x[1][0] and compare_months_variations(x[0][1], x[1][1]))
+    .filter(lambda x: x[0][0] < x[1][0] and compare_months_variations(x[0][1], x[1][1])) \
+    .map(lambda x: ((x[0][0], x[1][0]), merge_months_variations(x[0][1], x[1][1])))
 
-# # Map into a new RDD -> Key(Ticker1, Ticker2), value(month, variation1, variation2)
-# ticker_pair_to_variations = ticker_pairs_threshold.map(lambda x: ((x[0][0][0], x[1][0][0]), (x[0][0][1], x[0][1], x[1][1])))
-#
-# # Group by key(Ticker1, Ticker2)
-# # Filter when pairs of ticker are similar for all the month of the year
-# # Map into a new RDD -> Key = (Ticker1, Ticker2), value = (list of month variations pairs)
-# results = ticker_pair_to_variations.groupByKey().filter(lambda x: len(x[1]) == 12)\
-#      .map(lambda x: (x[0], sorted(list(x[1]), key=lambda y: y[0]))) \
-#      .coalesce(1)
+results = ticker_pairs_threshold.coalesce(1)
 
-ticker_pairs_threshold.saveAsTextFile(output_filepath)
+results.saveAsTextFile(output_filepath)
