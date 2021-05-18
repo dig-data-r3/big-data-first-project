@@ -4,7 +4,7 @@
 
 #"$SPARK_HOME"/bin/spark-submit \
 #  --master yarn \
-#  ./job2/spark/spark_job3.py \
+#  ./job3/spark/spark_job3.py \
 #  --input_path hdfs:///user/alex/input/historical_stock_prices.csv \
 #  --output_path hdfs:///user/alex/output/job3_spark
 
