@@ -2,6 +2,7 @@
 """spark application"""
 import argparse
 from datetime import datetime
+import pyspark
 
 # create parser and set its arguments
 from pyspark.sql import SparkSession
@@ -86,6 +87,7 @@ sc = spark.sparkContext
 # spark.sparkContext.textFile(filepath) returns an RDD
 # with a record for each line in the input file
 historical_stock_prices = sc.textFile(input_filepath).cache()
+# historical_stock_prices = sc.textFile(input_filepath).persist(pyspark.StorageLevel.MEMORY_AND_DISK)
 
 # Strip and split by "," records in rdd
 split_input = historical_stock_prices.map(lambda line: line.strip().split(','))
