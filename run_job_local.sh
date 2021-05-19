@@ -10,7 +10,7 @@ then
 	echo "Error: Too few arguments."
     echo "Usage: ./run_job_local n_job application [dataset_size (MB)]"
     echo "n_job = 1, 2, 3"
-    echo "application = hadoop, hive, spark"
+    echo "application = mapreduce, hive, spark"
     echo "dataset_size = 256, 512, 1024, default=2048MB (empty filename), 4096"
     exit 1
 fi
