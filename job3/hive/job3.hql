@@ -6,7 +6,7 @@ drop table job3_hive;
 
 create table 2017_data as
 select ticker, price_date, extract(month from price_date), close_price
-from historical_stock_prices
+from ${hivevar:DATASET_NAMESIZE}
 where extract(year from price_date) = 2017
 order by ticker, price_date;
 alter table 2017_data change `_c2` month int;

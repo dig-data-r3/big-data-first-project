@@ -10,7 +10,7 @@ mapred streaming \
   -files firstMapper.py,firstReducer.py \
   -mapper firstMapper.py \
   -reducer firstReducer.py \
-  -input input/historical_stock_prices.csv \
+  -input input/historical_stock_prices$1.csv \
   -output tmp/job3_mapreduce \
 && \
 mapred streaming \

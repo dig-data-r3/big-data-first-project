@@ -9,5 +9,5 @@ mapred streaming \
   -files mapper.py,reducer.py,../../dataset/historical_stocks_clean.csv \
   -mapper mapper.py \
   -reducer reducer.py \
-  -input input/historical_stock_prices.csv \
+  -input input/historical_stock_prices$1.csv \
   -output output/job2_mapreduce

@@ -9,10 +9,10 @@
 #  --output_path hdfs:///user/alex/output/job2_spark
 
 rm -r ./results/job2_spark/
-
+cd "$(dirname "$0")" || exit
 "$SPARK_HOME"/bin/spark-submit \
   --master local[4] \
-  ./job2/spark/spark_job2.py \
-  --input_hsp file:///home/alex/git/big-data-first-project/dataset/historical_stock_prices.csv \
-  --input_hs file:///home/alex/git/big-data-first-project/dataset/historical_stocks_clean.csv \
-  --output_path file:///home/alex/git/big-data-first-project/results/job2_spark
+  spark_job2.py \
+  --input_hsp ../../dataset/historical_stock_prices$1.csv \
+  --input_hs ../../dataset/historical_stocks_clean.csv \
+  --output_path ../../results/job2_spark

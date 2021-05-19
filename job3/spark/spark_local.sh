@@ -9,11 +9,11 @@
 #  --output_path hdfs:///user/alex/output/job3_spark
 
 rm -r ./results/job3_spark/
-
+cd "$(dirname "$0")" || exit
 "$SPARK_HOME"/bin/spark-submit \
   --master local[4] \
-  ./job3/spark/spark_job3.py \
-  --input_path file:///home/alex/git/big-data-first-project/dataset/historical_stock_prices.csv \
-  --output_path file:///home/alex/git/big-data-first-project/results/job3_spark
+  spark_job3.py \
+  --input_path ../../dataset/historical_stock_prices$1.csv \
+  --output_path ../../results/job3_spark
 
 notify-send "Job finished!"
