@@ -3,7 +3,7 @@ derby.log
 metastore_db/
 
 # Datasets, pdfs and ide files
-*.csv
+dataset/*.csv
 *.pdf
 .idea/
 
