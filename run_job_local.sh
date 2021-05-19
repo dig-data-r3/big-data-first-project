@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ./run_job_test n_job application dataset_size
+# ./run_job_local n_job application dataset_size
 # n_job = 1, 2, 3
 # application = hadoop, hive, spark
 # dataset_size = 256, 512, 1024, default=2048MB (empty filename), 4096
