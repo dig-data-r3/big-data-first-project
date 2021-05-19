@@ -6,6 +6,7 @@ cd "$(dirname "$0")" || exit
   #- D stream.num.map.output.key.fields=3 \
   # -D mapreduce.partition.keypartitioner.options=-k1,1 \
 mapred streaming \
+  -D mapreduce.job.reduces=1 \
   -files mapper.py,reducer.py,../../dataset/historical_stocks_clean.csv \
   -mapper mapper.py \
   -reducer reducer.py \

@@ -3,6 +3,7 @@
 hdfs dfs -rm -r output/job1_mapreduce/
 cd "$(dirname "$0")" || exit
 mapred streaming \
+  -D mapreduce.job.reduces=1 \
   -files mapper.py,reducer.py \
   -mapper mapper.py \
   -reducer reducer.py \

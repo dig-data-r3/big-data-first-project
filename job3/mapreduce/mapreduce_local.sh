@@ -17,6 +17,7 @@ mapred streaming \
   -D mapreduce.job.output.key.comparator.class=org.apache.hadoop.mapreduce.lib.partition.KeyFieldBasedComparator \
   -D stream.num.map.output.key.fields=2 \
   -D mapreduce.partition.keycomparator.options=-k2,2n \
+  -D mapreduce.job.reduces=1 \
   -files secondMapper.py,secondReducer.py \
   -mapper secondMapper.py \
   -reducer secondReducer.py \
