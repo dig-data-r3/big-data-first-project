@@ -23,4 +23,4 @@ else
 	time ./job$1/$2/$2_cluster.sh $3
 fi
 
-notify-send "Job $1 $2 finished!"
+# notify-send "Job $1 $2 finished!"
