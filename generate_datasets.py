@@ -12,7 +12,5 @@ def sample_all_sizes(dataset):
 
 
 dataset_sizes = [0.125, 0.25, 0.5, 2]
-
 stock_prices = pd.read_csv('dataset/historical_stock_prices.csv')
-
 sample_all_sizes(stock_prices)
