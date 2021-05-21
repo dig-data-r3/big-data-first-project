@@ -4,7 +4,7 @@ metastore_db/
 
 # Datasets, pdfs and ide files
 dataset/*.csv
-*.pdf
+Specifiche_Primo_Progetto.pdf
 .idea/
 
 # Byte-compiled / optimized / DLL files
